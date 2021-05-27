@@ -1,15 +1,11 @@
 package mainPart;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import exceptions.ConnectionException;
 import exceptions.InvalidInputException;
 
 import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-import java.util.Scanner;
 
 public class ServerConnect implements Serializable {
 
@@ -27,7 +23,7 @@ public class ServerConnect implements Serializable {
             port = PORT;
     }
 
-    public void writeData(Serializable data) throws ConnectionException{
+    public void writeData(Serializable data) throws ConnectionException {
         for (int attempt = 0; attempt <= connectionAttempts; attempt++) {
             try {
                 client = new Socket(ip, port);
@@ -55,8 +51,7 @@ public class ServerConnect implements Serializable {
             }
     }
 
-    private byte[] serialize(Serializable data) throws IOException {
-
+    public byte[] serialize(Serializable data) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
         objectOutputStream.writeObject(data);

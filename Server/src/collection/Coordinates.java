@@ -3,38 +3,47 @@ package collection;
 /**
  * Class that contains coordinates
  */
-public class Coordinates {
-    /**coordinate x*/
-    private final Double x; //Значение поля должно быть больше -48, Поле не может быть null
-    /**coordinate y*/
-    private final Double y;
 
-    /**
-     * Constructor with parameters
-     * @param x - coordinate x
-     * @param y - coordinate y
-     */
-    public Coordinates(Double x, double y) {
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
+import java.io.Serializable;
+
+@XmlRootElement(name = "coordinates")
+@XmlAccessorType(XmlAccessType.FIELD)
+public class Coordinates implements Serializable {
+    private double x;
+    private float y; //Значение поля должно быть больше -850
+
+    public Coordinates(double x, float y) {
+        this.setX(x);
+        this.setY(y);
+    }
+
+    public void setX(double x) {
         this.x = x;
+    }
+
+    public void setY(float y) {
         this.y = y;
     }
 
-    /**
-     * Getter {@link Coordinates#x}
-     * @return x coordinate
-     */
-    public Double getX() {
+    public double getX() {
         return x;
     }
 
-    /**
-     * Getter {@link Coordinates#y}
-     * @return y coordinate
-     */
-    public Double getY() {
+    public float getY() {
         return y;
     }
 
+    public Coordinates(){}
 
+    @Override
+    public String toString() {
+        return "Coordinates{" +
+                "x=" + x +
+                ", y=" + y +
+                '}';
+    }
 }

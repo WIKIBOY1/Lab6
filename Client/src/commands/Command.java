@@ -3,17 +3,17 @@ package commands;
 import java.io.Serializable;
 
 /**
- * Basic interface for all commands
+ * Базовый интерфейс для каждой команды
  */
 public interface Command extends Serializable {
     /**
-     * Method which executes the command
+     * Метод для реализации команды
      */
     String execute();
 
     /**
-     * @param countOfArguments - count of arguments
-     * @return true or false depending on the count of arguments
+     * @param countOfArguments - количество аргументов
+     * @return зависит от количества параметров
      */
     boolean correctCountOfArguments(int countOfArguments);
 }

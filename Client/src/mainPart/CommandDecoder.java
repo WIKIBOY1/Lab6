@@ -3,43 +3,32 @@ package mainPart;
 import java.io.Serializable;
 import java.util.*;
 
+import collection.Flat;
 import collection.IdComparator;
-import collection.Ticket;
 import commands.*;
 import exceptions.*;
 
 /**
- * Commands decoder class that which processes incoming commands and controls collection
+ * Класс, который контролирует коллекцию с командами
  */
 public class CommandDecoder implements Serializable {
-    /**hash map with all commands and their classes*/
     private final LinkedHashMap<String, Command> commands = new LinkedHashMap<>();
-    /**collection of tickets*/
-    private final TreeSet<Ticket> c;
+    private final TreeSet<Flat> c;
 
-
-    /**
-     * Constructor without parameters
-     */
     public CommandDecoder() {
         c = new TreeSet<>(new IdComparator());
         addCommands();
     }
 
-    /**
-     * Constructor with parameter
-     * @param c - collection of tickets
-     */
-    public CommandDecoder(TreeSet<Ticket> c) {
+    public CommandDecoder(TreeSet<Flat> c) {
         this.c = c;
         addCommands();
     }
 
     /**
-     * Put commands to the hash map
+     * Добавление команд в hashmap
      */
     private void addCommands() {
-        commands.put("help", new HelpCommand(commands));
         commands.put("info", new InfoCommand(c));
         commands.put("show", new ShowCommand(c));
         commands.put("add", new AddCommand(c));
@@ -48,11 +37,15 @@ public class CommandDecoder implements Serializable {
         commands.put("clear", new ClearCommand(c));
         commands.put("execute_script", new ExecuteScriptCommand(c));
         commands.put("remove_greater", new RemoveGreaterCommand(c));
-        commands.put("filter_greater_than_price", new FilterGreaterThanPriceCommand(c));
+        commands.put("remove_lower", new RemoveLowerCommand(c));
+        commands.put("print_ascending", new PrintAscendingCommand(c));
+        commands.put("filter_contains_name", new FilterContainsName(c));
+        commands.put("remove_all_by_house", new RemoveAllByHouseCommand(c));
+        commands.put("help", new HelpCommand(commands));
     }
 
     /**
-     * Command decoder
+     * Декодер команд
      * @param com - incoming command
      */
     public Command decode(String com) {
@@ -76,21 +69,7 @@ public class CommandDecoder implements Serializable {
         return null;
     }
 
-    /**
-     * Collection of tickets sorter by price and id
-     * @param c - collection of tickets
-     */
-    public static void sort(LinkedList<Ticket> c) {
-        Comparator<Ticket> comparator = Comparator.comparing(Ticket::getPrice).thenComparing(Ticket::getId);
-        c.sort(comparator);
-    }
-
-    /**
-     * Getter {@link CommandDecoder#c}
-     * @return collection of tickets
-     */
-    public TreeSet<Ticket> getCollection() {
+    public TreeSet<Flat> getCollection() {
         return c;
     }
-
 }

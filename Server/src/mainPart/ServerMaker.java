@@ -1,5 +1,4 @@
 package mainPart;
-
 import exceptions.ConnectionException;
 
 import java.io.*;
@@ -17,21 +16,57 @@ public class ServerMaker {
     protected Serializable request;
     protected Serializable response;
     protected Integer messageLength;
+    protected int clientAccepted = 0;
+    protected static int countOfSerialise = 0;
+    protected ByteArrayInputStream bis;
+    protected ObjectInputStream objectInputStream;
+    protected SocketChannel socketChannel;
+    protected DataInputStream dataInputStream;
 
     public ServerMaker(int PORT) {
         this.socketAddress = new InetSocketAddress(PORT);
+    }
+
+    public void connect(){
+        boolean again = true;
         try {
-            selector = Selector.open();
             this.serverChannel = ServerSocketChannel.open();
             serverChannel.configureBlocking(false);
-            serverChannel.bind(socketAddress);
-            serverChannel.register(selector, SelectionKey.OP_ACCEPT);
-            System.out.println("Ожидание подключения.");
+            System.out.println("Ожидание подключения...");
+            while (again){
+                try {
+                  //  System.out.println("here");
+                    serverChannel.bind(socketAddress);
+                  //  System.out.println("right here");
+                    again = false;
+                }catch (IOException e){
+                    e.getStackTrace();
+                //    System.out.println("may be here");
+                }
+            }
+            System.out.println("last hope");
+
         } catch (IOException e) {
             System.out.println("Клиент не подключён к серверу");
-            System.exit(1);
+            e.getStackTrace();
+//            try {
+//                selector.close();
+//            } catch (IOException ioException) {
+//                ioException.printStackTrace();
+//            }
+//            System.exit(1);
         }
     }
+
+    public void setSelector(){
+        try {
+            selector = Selector.open();
+            serverChannel.register(selector, SelectionKey.OP_ACCEPT);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public Serializable waitForRead() throws  ConnectionException {
         while (response == null) {
@@ -60,18 +95,18 @@ public class ServerMaker {
     private void selectorProcessing(Selector selector) throws IOException, ConnectionException {
         if (selector.selectNow() == 0) return;
         Set<SelectionKey> keys = selector.selectedKeys();
-            for (Iterator<SelectionKey> iterator = keys.iterator(); iterator.hasNext(); ) {
-                SelectionKey key = iterator.next();
-                iterator.remove();
-                if (key.isValid()) {
-                    if (key.isAcceptable()) acceptConnection(key);
-                    if (key.isReadable()) {
-                        response = deserialize(readData(key));
-                    }
-                    if (key.isWritable()) {
-                        writeData(serialize(request), key);
-                    }
+        for (Iterator<SelectionKey> iterator = keys.iterator(); iterator.hasNext(); ) {
+            SelectionKey key = iterator.next();
+            iterator.remove();
+            if (key.isValid()) {
+                if (key.isAcceptable()) acceptConnection(key);
+                if (key.isReadable()) {
+                    response = deserialize(readData(key));
                 }
+                if (key.isWritable()) {
+                    writeData(serialize(request), key);
+                }
+            }
         }
     }
 
@@ -82,24 +117,24 @@ public class ServerMaker {
     }
 
     private byte[] readData(SelectionKey key)  {
-    SocketChannel channel = (SocketChannel) key.channel();
-    byte[] a = new byte[4096];
-    ByteBuffer buffer = ByteBuffer.wrap(a);
-    try {
-        buffer.clear();
-        channel.read(buffer);
+        SocketChannel channel = (SocketChannel) key.channel();
+        byte[] a = new byte[4096];
+        ByteBuffer buffer = ByteBuffer.wrap(a);
         try {
-            channel.configureBlocking(false);
-            channel.register(key.selector(), SelectionKey.OP_WRITE);
+            buffer.clear();
+            channel.read(buffer);
+            try {
+                channel.configureBlocking(false);
+                channel.register(key.selector(), SelectionKey.OP_WRITE);
+            } catch (IOException e) {
+                closeChannel(channel);
+            }
+            buffer.flip();
+            buffer.clear();
+            return a;
         } catch (IOException e) {
-            closeChannel(channel);
+            throw new ConnectionException("Клиент не подключён серверу для получения данных");
         }
-        buffer.flip();
-        buffer.clear();
-        return a;
-    } catch (IOException e) {
-        throw new ConnectionException("Клиент не подключён серверу для получения данных");
-    }
     }
 
     public byte[] serialize(Serializable obj) {

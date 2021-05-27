@@ -1,47 +1,39 @@
 package commands;
 
-import collection.Ticket;
+import collection.Flat;
 import exceptions.IdNotFoundException;
 
-import java.util.LinkedList;
 import java.util.TreeSet;
 
 /**
- * Command class that outputs the ticket by its id and delete it
+ * Команда, которая удаляет элемент коллекции с соответствующим id
  */
 public class RemoveByIdCommand extends CommandWithAdditionalArgument{
-    /**ticket id*/
+
     private int ID;
 
-    /**
-     * Constructor with parameter
-     * @param c - collection of tickets
-     */
-    public RemoveByIdCommand(TreeSet<Ticket> c) {
-        this.c = c;
+    public RemoveByIdCommand(TreeSet<Flat> c) {
+        this.c.setFlats(c);
     }
 
     /**
-     * Output the ticket by its id and delete it
+     * Удаление квартиры с введёным id
      */
     @Override
     public String execute() {
-        if (!c.removeIf(i -> i.getId() == ID)) throw new IdNotFoundException();
+        if (!c.getFlats().removeIf(i -> i.getId() == ID)) throw new IdNotFoundException();
         return "Билет с id: " + ID + " был успешно удалён.";
     }
 
     /**
-     * Getting ticket id
-     * @param obj - ticket id
+     * Добавление дополнительного параметра flat id
+     * @param obj - flat id
      */
     @Override
     public void addArgument(String obj) {
         ID = Integer.parseInt(obj);
     }
 
-    /**
-     * @return info about command
-     */
     @Override
     public String toString() {
         return "remove_by_id <id> : удалить элемент из коллекции по его id";

@@ -1,34 +1,26 @@
 package commands;
 
-import collection.Ticket;
+import collection.Flat;
 
-import java.util.LinkedList;
 import java.util.TreeSet;
 
 /**
- * Command class that clears the collection
+ * Команда для очищения коллекции
  */
 public class ClearCommand extends CommandWithoutAdditionalArgument{
 
-    /**
-     * Constructor with parameter
-     * @param c - collection of tickets
-     */
-    public ClearCommand(TreeSet<Ticket> c) {
-        this.c = c;
+    public ClearCommand(TreeSet<Flat> c) {
+        this.c.setFlats(c);
     }
 
     /**
-     * Clear the collection
+     * Очищение коллекции
      */
     @Override
     public String execute() {
-        return c.removeAll(c) ? "Коллекция была очищена." : "Коллекция итак была пуста.";
-}
+        return c.getFlats().removeAll(c.getFlats()) ? "Коллекция была очищена." : "Коллекция итак была пуста.";
+    }
 
-    /**
-     * @return info about command
-     */
     @Override
     public String toString() {
         return "clear : очистить коллекцию";

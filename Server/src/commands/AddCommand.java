@@ -1,39 +1,31 @@
 package commands;
-import collection.Ticket;
-import mainPart.CommandDecoder;
+import collection.Flat;
 
-import java.util.LinkedList;
 import java.util.TreeSet;
 
 /**
- * Command class that adds the element to the collection
+ * Команда для добавления нового элемента коллекции
  */
-public class AddCommand extends CommandWithoutAdditionalArgument {
+public class AddCommand extends CommandWithFlatWithoutArgument {
 
-    public Ticket ticket = new Ticket();
-
-    /**
-     * Constructors with parameter
-     * @param c - collection of tickets
-     */
-    public AddCommand(TreeSet<Ticket> c) {
-        this.c = c;
+    private int searchMaxId(){
+        return c.getFlats().last().getId();
     }
 
+    public AddCommand(TreeSet<Flat> c) {
+        this.c.setFlats(c);
+    }
 
     /**
-     * add element to the collection
+     * добавление элемента коллекции
      */
     @Override
     public String execute() {
-        c.add(ticket);
-       // CommandDecoder.sort(c);
+        flat.setId(searchMaxId() + 1);
+        c.getFlats().add(flat);
         return "Новый элемент был успешно добавлен в коллекцию";
     }
 
-    /**
-     * @return info about command
-     */
     @Override
     public String toString() {
         return "add : добавить новый элемент в коллекцию";

@@ -1,26 +1,26 @@
 package commands;
 
-import collection.Ticket;
+import collection.Flat;
+import collection.Flats;
 
-import java.util.LinkedList;
 import java.util.TreeSet;
 
 /**
- * Basic interface for all commands without additional argument
+ * Базовый класс-скелет для команд без дополнительного аргумента
  */
 public abstract class CommandWithoutAdditionalArgument implements Command{
 
-    protected TreeSet<Ticket> c;
+    protected Flats c = new Flats();
 
 
-    public void updateCollection(TreeSet<Ticket> collection) {
-        c = collection;
+    public void updateCollection(TreeSet<Flat> collection) {
+        c.setFlats(collection);
     }
-    /**
-     * @param countOfArguments - count of arguments
-     * @return true if count of arguments = 0, else false
-     */
 
+    /**
+     * @param countOfArguments - количество параметров
+     * @return true если количество аргументов = 0, иначе false
+     */
     @Override
     public boolean correctCountOfArguments(int countOfArguments) {
         return countOfArguments == 0;

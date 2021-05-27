@@ -1,151 +1,169 @@
 package mainPart;
 
-import exceptions.IncorrectInputDataException;
 import collection.*;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.util.LinkedList;
+import javax.xml.bind.*;
+import java.io.*;
+import java.util.Iterator;
 import java.util.Scanner;
 import java.util.TreeSet;
 
 /**
- * Class to work with files
+ * Класс по работе с файлом
  */
 public class FileWorker {
-    /**collection of tickets*/
-    private final TreeSet<Ticket> c;
-    /**file path*/
-    String fileNameDefined = "Collection.csv";
-    /**ticket id*/
-    private  int id;
-    /**ticket name*/
-    private String name;
-    /**ticket coordinates*/
-    private Coordinates coordinates;
-    /**ticket price*/
-    private Double price;
-    /**ticket type*/
-    private TicketType type;
-    /**venue name*/
-    private String venueName;
-    /**venue capacity*/
-    private Integer venueCapacity;
-    /**venue type*/
-    private VenueType venueType;
 
-    /**
-     * Constructor with argument
-     * @param c - collection of tickets
-     */
-    public FileWorker(TreeSet<Ticket> c) {
-        this.c = c;
+    private final TreeSet<Flat> collection;
+    private File zeroCollection;
+    private Flats flats;
+    private boolean logging;
+
+    public boolean isLogging() {
+        return logging;
     }
 
-    /**
-     * File reader
-     * @param filePath - file to read
-     */
-    public String read(String filePath) {
-        try{
-            if (!filePath.equals("")) fileNameDefined = filePath;
-            File file = new File(fileNameDefined);
-            Scanner inputStream = new Scanner(file);
-            String delimiterDeterminant = inputStream.nextLine();
-            String delimiter = ";";
-            if (delimiterDeterminant.split(",").length > delimiterDeterminant.split(";").length) delimiter = ",";
-            String[] queue = delimiterDeterminant.split(delimiter);
-            while(inputStream.hasNextLine()){
-                String[] data = inputStream.nextLine().split(delimiter);
-                for (int k = 0; k < data.length; k++) {
-                    if (!data[k].equals("")) {
-                        if (queue[k].equals("id")) {
-                            int m = Integer.parseInt(data[k]);
-                            if (m > 0 && m < 214700000) {
-                                for (Ticket t : c) if (t.getId() == m) throw new IncorrectInputDataException();
-                                id = m;
-                            } else throw new IncorrectInputDataException();
-                            for (Ticket t : c) {
-                                if (t.getId() == m) throw new IncorrectInputDataException();
-                            }
-                            if (m > Ticket.getGeneralId()) Ticket.setGeneralId(m);
-                        }
-                        if (queue[k].equals("name")) if (!data[k].equals("")) name = data[k];
-                        else throw new IncorrectInputDataException();
-                        if (queue[k].equals("coordinates")) {
-                            String[] s = data[k].split(" ");
-                            if (s.length == 2 && Double.parseDouble(s[0]) > -48 && Double.parseDouble(s[1]) > -48) {
-                                Double[] m = {Double.parseDouble(s[0]), Double.parseDouble(s[1])};
-                                coordinates = new Coordinates(m[0], m[1]);
-                            } else throw new IncorrectInputDataException();
-                        }
-                        if (queue[k].equals("price"))
-                            if (Double.parseDouble(data[k]) > 0) price = Double.parseDouble(data[k]);
-                            else throw new IncorrectInputDataException();
-                        if (queue[k].equals("venueName")) if (!data[k].equals("")) venueName = data[k];
-                        else throw new IncorrectInputDataException();
-                        if (queue[k].equals("venueCapacity")) {
-                            int m = Integer.parseInt(data[k]);
-                            if (m > 0) venueCapacity = Integer.parseInt(data[k]);
-                            else throw new IncorrectInputDataException();
-                        }
-                        try {
-                            if (queue[k].equals("type") && !data[k].equals(""))
-                                type = TicketType.valueOf(data[k].toUpperCase());
-                            if (queue[k].equals("venueType") && !data[k].equals(""))
-                                venueType = VenueType.valueOf(data[k].toUpperCase());
-                        } catch (IllegalArgumentException e) {
-                            System.out.println("Один из типов в файле был введён неправльно, поэтому = null");
-                        }
-                    }
-                }
-                if (coordinates == null || price == null) { throw new IncorrectInputDataException();
-                } else {
-                    c.add(new Ticket(id, name, coordinates, price, type, venueName, venueCapacity, venueType));
-                    name = null;
-                    coordinates = null;
-                    price = null;
-                    type = null;
-                    venueName = null;
-                    venueCapacity = null;
-                    venueType = null;
-                }
-            }
-          //  CommandDecoder.sort(c);
-        } catch (FileNotFoundException e){
-            return "Не удалось найти указанный файл";
-        }
-        catch (SecurityException ex) {
-            return "Не хватает прав доступа для работы с файлом.";
-        }
-        return "Чтение из файла прошло успешно";
+    public void setLogging(boolean logging) {
+        this.logging = logging;
     }
 
+    public TreeSet<Flat> getCollection() {
+        return collection;
+    }
+
+    public FileWorker(TreeSet<Flat> collection) {
+        this.collection = collection;
+    }
+
+    public File getZeroCollection() {
+        return zeroCollection;
+    }
+
+    public void setZeroCollection(File zeroCollection) {
+        this.zeroCollection = zeroCollection;
+    }
+
+
     /**
-     * File writer
-     * @param fileNameDefined - file to write
+     * Сохранение коллекции
+     * @param path - путь для сохранения
      */
-    public String write(String fileNameDefined) {
+    public String save(String path) {
         try {
-            File file = new File(fileNameDefined);
-            String output;
-            PrintWriter printWriter = new PrintWriter(file);
-            printWriter.println("id,name,coordinates,price,type,venueName,venueCapacity,venueType");
-                for (Ticket t : c) {
-                    output = t.getId() + "," + t.getName() + "," + t.getCoordinates().getX() + " " + t.getCoordinates().getY() + "," + t.getPrice() + "," + t.getType();
-                    if (t.getVenue() != null) {
-                        output = output + "," + t.getVenue().getName() + "," + t.getVenue().getCapacity() + "," + t.getVenue().getType();
-                    }
-                    printWriter.println(output.replace("null", ""));
-                }
-            printWriter.close();
-        } catch (FileNotFoundException e) {
-            return "Не удалось найти указанный файл.";
-        }
-        catch (SecurityException ex) {
-            return "Не хватает прав доступа для работы с файлом.";
+            Flats flats1 = new Flats();
+            flats1.setFlats(collection);
+            JAXBContext jaxbContext = JAXBContext.newInstance(Flats.class);
+            Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+            jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+            FileOutputStream fileOutputStream = new FileOutputStream(new File(System.getenv(path)));
+            jaxbMarshaller.marshal(flats1, fileOutputStream);
+        } catch (JAXBException | FileNotFoundException e) {
+            System.err.println("Вы даже не открыли файл(");
+        } catch (NullPointerException e) {
+            return "Неверная переменная окружения";
         }
         return "Запись в файл прошла успешно.";
+    }
+    /**
+     * Десериализует коллекцию из файла xml
+     */
+    public String fillUp() throws JAXBException{
+        try {
+            if (!getZeroCollection().canRead() || !getZeroCollection().canWrite()) throw new SecurityException();
+        } catch (SecurityException ex) {
+            if (!this.isLogging()) {
+                System.out.println("Не хватает прав доступа для работы с файлом.");
+            }
+            System.exit(1);
+        }
+        try{
+            BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(getZeroCollection()));
+            JAXBContext context = JAXBContext.newInstance(Flats.class);
+            Unmarshaller unmarshaller = context.createUnmarshaller();
+            flats = (Flats) unmarshaller.unmarshal(bufferedInputStream);
+            collection.addAll(flats.getFlats());
+            Iterator iterator = flats.getFlats().iterator();
+            System.out.println("Программа готова к работе");
+        } catch (UnmarshalException e){
+            return"Файл должен быть формата xml";
+        }catch ( NullPointerException | FileNotFoundException e){
+            return "В файле не было коллекции";
+        }
+        return "FillUp успешно заполнил коллекцию";
+    }
+
+    /**
+     * Находит путь по введённому значению переменной окружения
+     */
+    private String findPath(){
+        String path = "";
+        boolean m = false;
+        Scanner input = new Scanner(System.in);
+        String inputString = "";
+        Scanner support;
+        do {
+            // if (!this.presenter.isLogging()) {
+            System.out.println("Введите имя файла");
+            // }
+            try{
+                if (!input.hasNextLine()) {
+                    input.close();
+                    try {
+                        safeExit(path);
+                    }catch (NullPointerException e){
+                        System.err.println("Нельзя сохранять пустую коллекцию");
+                    }
+                }
+                inputString = input.nextLine();
+            }catch (IllegalStateException e){
+                System.err.println("Не сегодня");
+                System.exit(0);
+            }
+            if (!inputString.isEmpty()) {
+                support = new Scanner(inputString);
+                if (support.hasNext()) {
+                    path = support.next();
+                    m = true;
+                }
+            }
+        } while (!m);
+        return path;
+    }
+
+    /**
+     * Безопасный выход. Сохраняет коллекцию в xml файл и выходит из программы.
+     */
+    private void safeExit(String path) {
+        if (path == ""){
+            System.exit(0);
+        }
+        save(path);
+        System.exit(0);
+    }
+
+    /**
+     * Анализирует на коректность введённого значения переменной окружения
+     */
+    public String analyzePath(String path){
+        // String path = findPath();
+        if (path == null){
+            System.out.println("Неверный путь.");
+            System.exit(1);
+        }
+        try {
+            File file = new File(System.getenv(path));
+            setZeroCollection(file);
+            if (!getZeroCollection().exists()) {
+                System.out.println("Файла по указанному пути не существует.");
+                System.out.println(System.getenv(path));
+                System.exit(1);
+            }
+            this.fillUp();
+            this.setLogging(true);
+        }catch (NullPointerException e){
+            return "Неверная переменная окружения";
+        }catch (JAXBException e) {
+            e.printStackTrace();
+        }
+        return "Чтение файла прошло успешно";
     }
 }

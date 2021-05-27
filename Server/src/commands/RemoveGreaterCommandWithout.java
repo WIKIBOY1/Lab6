@@ -7,9 +7,9 @@ import java.util.TreeSet;
 /**
  * Команда, которая удаляет все элементы коллекции больше заданного
  */
-public class RemoveGreaterCommand extends CommandWithFlatWithoutArgument {
+public class RemoveGreaterCommandWithout extends CommandWithFlatWithoutArgument {
 
-    public RemoveGreaterCommand(TreeSet<Flat> c) {this.c.setFlats(c);}
+    public RemoveGreaterCommandWithout(TreeSet<Flat> c) {this.c.setFlats(c);}
 
     /**
      * Удаление всех элементов коллекции больше заданного

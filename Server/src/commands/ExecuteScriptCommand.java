@@ -4,30 +4,26 @@ import exceptions.IdNotFoundException;
 import exceptions.IllegalCountOfArgumentsException;
 import exceptions.InfiniteRecursionException;
 import mainPart.CommandDecoder;
-import collection.Ticket;
+import collection.Flat;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Scanner;
 import java.util.TreeSet;
 
 /**
- * Command class what executes script
+ * Команда, которая выполняет execute script
  */
 public class ExecuteScriptCommand extends CommandWithAdditionalArgument{
-    /**file path to execute the script*/
     private String filePath;
-    /**collection of tickets*/
-    private final TreeSet<Ticket> c;
-    /**hash set that contains all execute script commands in file*/
+    private final TreeSet<Flat> c;
     public static final HashSet<String> executeScriptCommands = new HashSet<>();
     private transient Scanner scanner;
     private CommandDecoder cd;
 
 
-    public ExecuteScriptCommand(TreeSet<Ticket> c) {this.c = c;}
+    public ExecuteScriptCommand(TreeSet<Flat> c) {this.c = c;}
 
 
     /**
@@ -72,9 +68,10 @@ public class ExecuteScriptCommand extends CommandWithAdditionalArgument{
 
     public Scanner getScanner() {return scanner;}
 
+
     /**
-     * Getting file path to execute script {@link ExecuteScriptCommand#filePath}
-     * @param obj - file path
+     * Добавление дополнительного параметра flat filePath
+     * @param obj - flat filePath
      */
     @Override
     public void addArgument(String obj) {
@@ -82,9 +79,6 @@ public class ExecuteScriptCommand extends CommandWithAdditionalArgument{
 
     }
 
-    /**
-     * @return info about command
-     */
     @Override
     public String toString() {
         return "execute_script <file_path> : считать и исполнить скрипт из указанного файла.";

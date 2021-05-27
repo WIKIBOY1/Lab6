@@ -1,43 +1,40 @@
 package mainPart;
 
+import collection.Flat;
 import commands.*;
 import exceptions.IllegalCountOfArgumentsException;
-import collection.Ticket;
 
 import java.io.Serializable;
 import java.util.*;
 
 /**
- * Commands decoder class that which processes incoming commands and controls collection
+ * Класс, который хранит команды и декодирует их
  */
 public class CommandDecoder implements Serializable {
-    /**hash map with all commands and their classes*/
     private final LinkedHashMap<String, Command> commands = new LinkedHashMap<>();
-    /**collection of tickets*/
-    private final TreeSet<Ticket> c;
+    private final TreeSet<Flat> c;
 
     /**
-     * Constructor without parameters
+     * Конструктор без параметров
      */
     public CommandDecoder() {
-        c = new TreeSet<>(Comparator.comparing(Ticket::getId));
+        c = new TreeSet<>(Comparator.comparing(Flat::getId));
         addCommands();
     }
 
     /**
-     * Constructor with parameter
-     * @param c - collection of tickets
+     * Конструктор с параметром
+     * @param c - коллекция квартир
      */
-    public CommandDecoder(TreeSet<Ticket> c) {
+    public CommandDecoder(TreeSet<Flat> c) {
         this.c = c;
         addCommands();
     }
 
     /**
-     * Put commands to the hash map
+     * Добавление команд
      */
     private void addCommands() {
-        commands.put("help", new HelpCommand(commands));
         commands.put("info", new InfoCommand(c));
         commands.put("show", new ShowCommand(c));
         commands.put("add", new AddCommand(c));
@@ -46,12 +43,16 @@ public class CommandDecoder implements Serializable {
         commands.put("clear", new ClearCommand(c));
         commands.put("execute_script", new ExecuteScriptCommand(c));
         commands.put("remove_greater", new RemoveGreaterCommand(c));
-        commands.put("filter_greater_than_price", new FilterGreaterThanPriceCommand(c));
+        commands.put("remove_lower", new RemoveLowerCommand(c));
+        commands.put("print_ascending", new PrintAscendingCommand(c));
+        commands.put("filter_contains_name", new FilterContainsName(c));
+        commands.put("remove_all_by_house", new RemoveAllByHouseCommand(c));
+        commands.put("help", new HelpCommand(commands));
     }
 
     /**
-     * Command decoder
-     * @param com - incoming command
+     * Командный декодер
+     * @param com - команда
      */
     public Command decode(String com) {
 
@@ -60,7 +61,7 @@ public class CommandDecoder implements Serializable {
             s1 = com.split("\t");
             if (s1.length > s.length) s = s1;
             if (s.length == 0) throw new NullPointerException();
-            if (!s[0].equals("exit")) {
+            //if (!s[0].equals("exit")) {
                 int countOfArguments = s.length - 1;
                 Command cd = commands.get(s[0].toLowerCase());
                 try {
@@ -72,24 +73,11 @@ public class CommandDecoder implements Serializable {
                     System.out.println("Аргумент имеет неправльный тип (для id - int, для price - double)");
                 }
 
-            }
+          //  }
         return null;
     }
 
-//    /**
-//     * Collection of tickets sorter by price and id
-//     * @param c - collection of tickets
-//     */
-//    public static void sort(TreeSet<Ticket> c) {
-//        TreeSet<Ticket> comparator = Comparator.comparing(Ticket::getPrice).thenComparing(Ticket::getId);
-//        c.sort(comparator);
-//    }
-
-    /**
-     * Getter {@link CommandDecoder#c}
-     * @return collection of tickets
-     */
-    public TreeSet<Ticket> getCollection() {
+    public TreeSet<Flat> getCollection() {
         return c;
     }
 

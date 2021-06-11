@@ -1,68 +1,44 @@
 package mainPart;
 
 import commands.*;
-import collection.*;
 import exceptions.ConnectionException;
 import exceptions.IdNotFoundException;
-import exceptions.IncorrectInputDataException;
-
-import java.util.TreeSet;
+import java.io.Serializable;
+import java.sql.*;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
 public class ServerPart {
 
     private final ServerMaker serverMaker;
-    private final TreeSet<Flat> collection;
+    private final DataBaseWorker dataBaseWorker;
     private static boolean isClientConnected = true;
-    private final FileWorker fw;
-    private States states = States.READ_NAME;
+    private HistoryCommand history = new HistoryCommand();
+    private ReadWriteLock lock = new ReadWriteLock() {
+        @Override
+        public Lock readLock() {
+            return null;
+        }
 
+        @Override
+        public Lock writeLock() {
+            return null;
+        }
+    };
 
-    public ServerPart (TreeSet<Flat> collection, ServerMaker serverMaker) {
-        this.collection = collection;
+    public ServerPart (ServerMaker serverMaker) {
+        dataBaseWorker = new DataBaseWorker();
         this.serverMaker = serverMaker;
-        Object inputObject;
-        Object inputObject1 = null;
-        String response = "";
-        fw = new FileWorker(collection);
-        do {
-            try {
-//                inputObject = serverMaker.waitForRead(31);
-//                System.out.println(inputObject);
-//               // String string = (String)inputObject;
-//                //System.out.println(string);
-//                Integer integer = (Integer) inputObject;
-//                System.out.println(integer);
-//                serverMaker.waitForWrite(integer.toString());
-//                inputObject1 = serverMaker.waitForRead(integer);
-//                String path = (String) inputObject1;
-                inputObject = serverMaker.waitForRead();
-                String path = (String) inputObject;
-               // serverMaker.waitForWrite(fw.read(path));
-                response = fw.analyzePath(path);
-                serverMaker.waitForWrite(response);
-                collection = fw.getCollection();
-            } catch (IncorrectInputDataException e) {
-                collection.clear();
-                serverMaker.waitForWrite("Проверьте файл на корректность введённых данных.");
-            /*} catch (ClassCastException e) {
-                if (inputObject instanceof Command) {
-                    fw.analyzePath("с");
-                    readCommand((Command) inputObject);
-                } //else System.exit(1);*/
-            } catch (ConnectionException e) {
-                System.out.println(e.getMessage());
-                System.out.println(fw.save("USER"));
-                System.exit(1);
-            }
-        }while (!response.contains("успешно"));
+        history.addHistory();
     }
 
-    private void readCommand(Command command) {
+    private void readCommand(Command command, String userName) {
+        lock.readLock();
         try {
-            System.out.println("2");
-            String s = check(command);
-            System.out.println(s);
-            serverMaker.waitForWrite(s);
+            String s = check(command, userName);
+            lock.writeLock();
+            serverMaker.addRequest(userName, s);
         } catch (ConnectionException e) {
             System.out.println(e.getMessage());
             isClientConnected = false;
@@ -70,40 +46,80 @@ public class ServerPart {
     }
 
     public void readCommands() {
+        ExecutorService service = Executors.newCachedThreadPool();
         while (isClientConnected) {
             try {
-              //  System.out.println("3");
-                Command command = (Command) serverMaker.waitForRead();
-               // System.out.println("5");
-                readCommand(command);
-               // System.out.println("4");
+                try {
+                    for (Serializable serializable : serverMaker.getResponses().keySet()) {
+                        Command command = (Command) serializable;
+                        service.execute(() -> {
+                            if (command != null) {
+                                String user = serverMaker.getResponses().get(serializable);
+                                serverMaker.removeResponse(serializable);
+                                if (user != null) {
+                                    readCommand(command, user);
+                                }
+                            }
+                        });
+                    }
+                } catch (ClassCastException e) {
+                    System.out.println(serverMaker.getResponses());
+                }
             } catch(ConnectionException e) {
-               // System.out.println(e.getMessage());
+                System.out.println(e.getMessage());
                 isClientConnected = false;
             }
         }
+        service.shutdown();
     }
 
-    private String check(Command command) {
+    private String check(Command command, String userName) {
         try {
             String s = "";
-          //  System.out.println("out");
-            if (command != null) {
-             //   System.out.println("in");
-                ((CommandWithoutAdditionalArgument) command).updateCollection(collection);
-               // System.out.println("flat");
-              //  System.out.println(command.getClass());
-                if (command.getClass() == UpdateCommand.class) {
-                    s = command.execute();
-                   // System.out.println(1);
+            try {
+                if (command != null) {
+                    ((CommandWithoutAdditionalArgument) command).updateCollection(dataBaseWorker.getFlats());
+                    history.addPlus(command);
+                    if (command.getClass() == UpdateCommand.class) {
+                        if(((UpdateCommand) command).ID >= 0){
+                            ((UpdateCommand) command).getFlat().setId(((UpdateCommand) command).ID);
+                            dataBaseWorker.addFlatToDB(((UpdateCommand) command).getFlat(), userName);
+                        }
+                    }
+                    if(command.getClass() == RemoveByIdCommand.class){
+                        dataBaseWorker.removeFlatFromDBById(((RemoveByIdCommand) command).getID(), userName);
+                    }
+                    if(command.getClass() == RemoveAllByHouseCommand.class){
+                        dataBaseWorker.removeAllFlatsFromDBByHouse(((RemoveAllByHouseCommand) command).getHouse(), userName);
+                    }
+                    if(command.getClass() == RemoveGreaterCommand.class || command.getClass() == RemoveLowerCommand.class){
+                        command.execute();
+                        dataBaseWorker.removeAllFlatsFromDBById(((CommandWithFlatWithoutArgument) command).getHashOfFlats(), userName);
+                    }
+                    if(command.getClass() == AddCommand.class){
+                        dataBaseWorker.addFlatToDB(((AddCommand) command).getFlat(), userName);
+                    }
+                    if(command.getClass() == ClearCommand.class){
+                        dataBaseWorker.clearDB(userName);
+                    }
+                    if(command.getClass() == HistoryCommand.class){
+                        s += history.execute();
+                    }
+                    if (!s.equals("")) {
+                        s += "Flat created";
+                    }
+                    if (command.getClass() != HistoryCommand.class & command.getClass() != RemoveLowerCommand.class & command.getClass() != RemoveGreaterCommand.class) s += "\n" + command.execute() + "\n";
                 }
-                if (!s.equals("")) {
-                    s += "Flat created";
-                }
-                if (command.getClass() != UpdateCommand.class) s += command.execute();
+                dataBaseWorker.updateDB();
+                return s;
+            } catch (IdNotFoundException e) {
+                return e.getMessage();
             }
-            return s;
-        } catch (IdNotFoundException e) {return e.getMessage();}
+        } catch (SQLException throwable) {
+            return "у вас нет прав доступа";
+        }
     }
 
+    public DataBaseWorker getDataBaseWorker() {return dataBaseWorker;}
+    public boolean isIsClientConnected() {return isClientConnected;}
 }

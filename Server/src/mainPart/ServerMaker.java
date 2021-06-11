@@ -1,4 +1,5 @@
 package mainPart;
+
 import exceptions.ConnectionException;
 
 import java.io.*;
@@ -6,129 +7,57 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ServerMaker {
     protected SocketAddress socketAddress;
     protected ServerSocketChannel serverChannel;
     protected Selector selector;
-    protected Serializable request;
-    protected Serializable response;
-    protected Integer messageLength;
-    protected int clientAccepted = 0;
-    protected static int countOfSerialise = 0;
-    protected ByteArrayInputStream bis;
-    protected ObjectInputStream objectInputStream;
-    protected SocketChannel socketChannel;
-    protected DataInputStream dataInputStream;
+    private final ConcurrentHashMap<Serializable, String> responses = new ConcurrentHashMap<>();
+    public volatile ConcurrentHashMap<String, Serializable> requests = new ConcurrentHashMap<>();
+    public volatile ConcurrentHashMap<String, SocketChannel> usersChannels = new ConcurrentHashMap<>();
+    boolean itsWritten = false;
 
     public ServerMaker(int PORT) {
         this.socketAddress = new InetSocketAddress(PORT);
-    }
-
-    public void connect(){
-        boolean again = true;
-        try {
-            this.serverChannel = ServerSocketChannel.open();
-            serverChannel.configureBlocking(false);
-            System.out.println("Ожидание подключения...");
-            while (again){
-                try {
-                  //  System.out.println("here");
-                    serverChannel.bind(socketAddress);
-                  //  System.out.println("right here");
-                    again = false;
-                }catch (IOException e){
-                    e.getStackTrace();
-                //    System.out.println("may be here");
-                }
-            }
-            System.out.println("last hope");
-
-        } catch (IOException e) {
-            System.out.println("Клиент не подключён к серверу");
-            e.getStackTrace();
-//            try {
-//                selector.close();
-//            } catch (IOException ioException) {
-//                ioException.printStackTrace();
-//            }
-//            System.exit(1);
-        }
-    }
-
-    public void setSelector(){
         try {
             selector = Selector.open();
-            serverChannel.register(selector, SelectionKey.OP_ACCEPT);
+            this.serverChannel = ServerSocketChannel.open();
+            serverChannel.bind(socketAddress);
+            System.out.println("Ожидание подключения.");
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Клиент не подключён к серверу");
+            System.exit(1);
         }
     }
-
-
-    public Serializable waitForRead() throws  ConnectionException {
-        while (response == null) {
-            try {
-                selectorProcessing(selector);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        Serializable responce1 = response;
-        response = null;
-        return responce1;
+    public  ConcurrentHashMap<Serializable, String> getResponses() {return responses;}
+    public  void removeResponse(Serializable key) {getResponses().remove(key);}
+    public  void addRequest(String user, Serializable request) {
+        getRequests().put(user, request);
     }
+    public ConcurrentHashMap<String, Serializable> getRequests() {return requests;}
 
-    public void waitForWrite(Serializable request) throws ConnectionException {
-        this.request = request;
-        while (this.request != null) {
-            try {
-                selectorProcessing(selector);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+
+
+    public SocketChannel acceptConnection() throws IOException {
+        SocketChannel socketChannel = null;
+        while (socketChannel == null) {
+            socketChannel = serverChannel.accept();
         }
-    }
-
-    private void selectorProcessing(Selector selector) throws IOException, ConnectionException {
-        if (selector.selectNow() == 0) return;
-        Set<SelectionKey> keys = selector.selectedKeys();
-        for (Iterator<SelectionKey> iterator = keys.iterator(); iterator.hasNext(); ) {
-            SelectionKey key = iterator.next();
-            iterator.remove();
-            if (key.isValid()) {
-                if (key.isAcceptable()) acceptConnection(key);
-                if (key.isReadable()) {
-                    response = deserialize(readData(key));
-                }
-                if (key.isWritable()) {
-                    writeData(serialize(request), key);
-                }
-            }
-        }
-    }
-
-    private void acceptConnection(SelectionKey key) throws IOException {
-        SocketChannel socketChannel = ((ServerSocketChannel) key.channel()).accept();
         socketChannel.configureBlocking(false);
-        socketChannel.register(key.selector(), SelectionKey.OP_READ);
+        return socketChannel;
     }
 
-    private byte[] readData(SelectionKey key)  {
-        SocketChannel channel = (SocketChannel) key.channel();
+    public byte[] readData(SocketChannel channel)  {
         byte[] a = new byte[4096];
         ByteBuffer buffer = ByteBuffer.wrap(a);
         try {
             buffer.clear();
-            channel.read(buffer);
-            try {
-                channel.configureBlocking(false);
-                channel.register(key.selector(), SelectionKey.OP_WRITE);
-            } catch (IOException e) {
-                closeChannel(channel);
-            }
+            int b = channel.read(buffer);
+            while (b == -1 || b == 0) {
+                b = channel.read(buffer);
+                buffer.clear();
+            };
             buffer.flip();
             buffer.clear();
             return a;
@@ -137,20 +66,19 @@ public class ServerMaker {
         }
     }
 
-    public byte[] serialize(Serializable obj) {
+    public static byte[] serialize(Serializable obj) {
         try {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
             objectOutputStream.writeObject(obj);
             return byteArrayOutputStream.toByteArray();
         } catch (IOException e) {
-            //e.printStackTrace();
+            e.printStackTrace();
         }
         return null;
     }
 
-    public Serializable deserialize(byte[] rawData) {
-
+    public static Serializable deserialize(byte[] rawData) {
         try {
             if (rawData != null) {
                 ByteArrayInputStream bis = new ByteArrayInputStream(rawData);
@@ -158,38 +86,22 @@ public class ServerMaker {
                 return (Serializable) objectInputStream.readObject();
             }
         } catch (IOException | ClassNotFoundException ex) {
-            //ex.printStackTrace();
+            ex.printStackTrace();
         }
         return null;
 
     }
 
-    private void writeData(byte[] bytes, SelectionKey key) throws ConnectionException {
-        SocketChannel channel = (SocketChannel) key.channel();
+    public void writeData(byte[] bytes, SocketChannel channel) throws ConnectionException {
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
         try {
-            channel.write(buffer);
-            request = null;
+            while(channel.write(buffer) == 0) {};
+            itsWritten = true;
+            getRequests().remove(channel);
         } catch (IOException e) {
             throw new ConnectionException("Клиент не подключён к серверу для отправки данных");
         }
         buffer.flip();
         buffer.clear();
-        try {
-            channel.configureBlocking(false);
-            channel.register(key.selector(), SelectionKey.OP_READ);
-        } catch (IOException e) {
-            closeChannel(channel);
-        }
-
-
-    }
-
-    private void closeChannel(SocketChannel channel) {
-        try {
-            channel.close();
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
-        }
     }
 }

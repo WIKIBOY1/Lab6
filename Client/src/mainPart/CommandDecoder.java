@@ -41,6 +41,7 @@ public class CommandDecoder implements Serializable {
         commands.put("print_ascending", new PrintAscendingCommand(c));
         commands.put("filter_contains_name", new FilterContainsName(c));
         commands.put("remove_all_by_house", new RemoveAllByHouseCommand(c));
+        commands.put("history", new HistoryCommand());
         commands.put("help", new HelpCommand(commands));
     }
 
@@ -49,7 +50,6 @@ public class CommandDecoder implements Serializable {
      * @param com - incoming command
      */
     public Command decode(String com) {
-
             String[] s, s1;
             com = com.trim();
             s = com.split(" ");

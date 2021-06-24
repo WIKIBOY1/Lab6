@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Class-Path: postgresql-42.2.18.jre6.jar
+Main-Class: mainPart.Main
+

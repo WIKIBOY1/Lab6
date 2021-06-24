@@ -14,7 +14,7 @@ import java.util.*;
 public class CommandDecoder implements Serializable {
     private final LinkedHashMap<String, Command> commands = new LinkedHashMap<>();
     private final TreeSet<Flat> c;
-    private final IdComparator idComparator = new IdComparator();
+    private IdComparator idComparator = new IdComparator();
 
     /**
      * Конструктор без параметров

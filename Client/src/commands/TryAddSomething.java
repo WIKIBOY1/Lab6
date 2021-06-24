@@ -2,11 +2,11 @@ package commands;
 
 import exceptions.IncorrectInputDataException;
 
-public class TryAddSomething {
+public interface TryAddSomething {
     /**
      * Добавляет что-то(квартиру или попытку ввести данные заново)
      */
-    public static boolean addSomething(String inputString){
+    static boolean addSomething(String inputString){
         if (!inputString.isEmpty()) {
             int answer = Integer.parseInt(inputString);
             if (answer == 1) {

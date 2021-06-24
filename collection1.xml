@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<flats>
+    <IdComparator/>
+    <flat>
+        <creationDate>2021-03-19T21:05:07.952</creationDate>
+        <area>20.0</area>
+        <coordinates>
+            <x>1.0</x>
+            <y>1.0</y>
+        </coordinates>
+        <creationDate/>
+        <furnish>DESIGNER</furnish>
+        <house>
+            <nameHouse>дом</nameHouse>
+            <year>2010</year>
+            <numberOfFlatsOnFloor>1</numberOfFlatsOnFloor>
+        </house>
+        <id>1</id>
+        <name>что-то</name>
+        <numberOfRooms>10</numberOfRooms>
+        <transport>NORMAL</transport>
+        <view>NORMAL</view>
+    </flat>
+    <flat>
+        <creationDate>2021-04-04T19:37:14.901</creationDate>
+        <area>1.0</area>
+        <coordinates>
+            <x>100.0</x>
+            <y>1000.0</y>
+        </coordinates>
+        <creationDate/>
+        <furnish>LITTLE</furnish>
+        <id>2</id>
+        <name>МСГ</name>
+        <numberOfRooms>1</numberOfRooms>
+        <transport>LITTLE</transport>
+        <view>TERRIBLE</view>
+    </flat>
+</flats>

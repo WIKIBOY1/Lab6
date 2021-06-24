@@ -34,12 +34,13 @@ public class Flat implements Serializable {
     private House house; //Поле может быть null
     private String login;
 
-    //private static int statId = 0;
+  //  private static int statId = 0;
 
     public Flat(){
-    //    this.id = statId;
+      //  this.id = statId;
         this.setCreationDate(LocalDateTime.now());
         this.setDateTimeString(creationDate.toString());
+       // statId++;
     }
 
     public Flat (int id){
@@ -52,7 +53,7 @@ public class Flat implements Serializable {
 
     public Flat(String name, Coordinates coordinates, Float area, Long numberOfRooms, Furnish furnish, View view, Transport transport, House house){
         this.setName(name);
-       // this.id = statId;
+      //  this.id = statId;
         this.setCoordinates(coordinates);
         this.setCreationDate(LocalDateTime.now());
         this.setArea(area);
@@ -62,7 +63,7 @@ public class Flat implements Serializable {
         this.setTransport(transport);
         this.setHouse(house);
         this.setDateTimeString(creationDate.toString());
-      //  statId++;
+     //   statId++;
     }
 
     public Flat(int id, String name, Coordinates coordinates, Float area, Long numberOfRooms, Furnish furnish, View view, Transport transport, House house, String login){
@@ -159,6 +160,7 @@ public class Flat implements Serializable {
 
     public void setId(int id) {
         this.id = id;
+       // statId--;
     }
 
     public void setCreationDate(LocalDateTime creationDate) {

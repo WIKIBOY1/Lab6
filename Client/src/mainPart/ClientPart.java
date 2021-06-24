@@ -1,82 +1,94 @@
 package mainPart;
 
-import collection.States;
 import commands.*;
 import exceptions.*;
 import java.io.*;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
-
-import static commands.Checker.check;
+import java.io.Console;
 
 public class ClientPart {
-    private String lastString;
+    private String lastString = "";
     private final InputStream inputStream;
     private final Scanner in;
     private final ServerConnect serverDeliver;
     private final CommandDecoder cd = new CommandDecoder();
     private int attempt = 0;
+    private UserData userData;
+    private BufferedReader br;
+    private Console console;
 
-    public ClientPart (ServerConnect serverDeliver, InputStream inputStream){
+    public ClientPart (ServerConnect serverDeliver, InputStream inputStream, Console console) {
         this.serverDeliver = serverDeliver;
         this.inputStream = inputStream;
         this.in = new Scanner(this.inputStream);
-    }
-
-    public void readFromFile() throws IOException {
-        boolean again = false;
-        do {
-            String filePath = safeRead("Введите переменную окружения файла, из которого необходимо считать коллекцию:");
-            try {
-//                byte[] bytes = serverDeliver.serialize(filePath);
-//                Integer integer = bytes.length;
-//                //String integerToString = integer.toString();
-//                serverDeliver.writeData(integer);
-//                System.out.println(integer);
-//                Integer integer1 = Integer.parseInt((String) serverDeliver.readData());
-//                System.out.println(integer1);
-//                serverDeliver.writeData(bytes);
-                serverDeliver.writeData(filePath);
-                String b = (String) serverDeliver.readData();
-                System.out.println(b);
-                /*
-                byte[] bytes = serverDeliver.serialize(inputCommand);
-                    Integer integer = bytes.length;
-                    serverDeliver.writeData(integer);
-                    System.out.println(integer);
-                    serverDeliver.writeData(inputCommand);
-                    s = ((String) serverDeliver.readData());
-                 */
-                if (b.contains("успешно")) {
-                    again = true;
-                } else {
-                    if(!tryAgain()){ System.out.println("Приятно было с вами поработать");System.exit(0);}
-                }
-            } catch (InvalidInputException e) {
-                System.out.println(e.getMessage());
-            }
-        }while (!again);
-    }
-
-    private boolean tryAgain(){
-        System.out.println("Хотите ввести переменную окружения[Да - 1, Нет - 2]?");
-        return TryAddSomething.addSomething(check(in));
+        this.br = new BufferedReader(new InputStreamReader(inputStream));
+        this.console = console;
     }
 
     private String safeRead(String field) {
-        if (this.inputStream == System.in) {
-            System.out.println(field);
-        }
+        do {
+            if (this.inputStream == System.in) {
+                System.out.println(field);
+            }
             try {
                 lastString = in.nextLine();
             } catch (NoSuchElementException e) {
                 in.close();
                 System.exit(0);
             }
-            return lastString;
+        } while (lastString.length() > 200);
+        return lastString;
     }
 
-    public void understanding() throws IOException{
+    public void authorization() {
+        String answer = safeRead("Есть ли у вас аккаунт? (Введите No, чтобы создать аккаунт) ");
+        if (answer.trim().toLowerCase().equals("no")) createNewAccount();
+        String result = "";
+        while (!result.equals("Вход успешно выполнен")) {
+            System.out.println("Авторизация: ");
+            String[] loginAndPassword = loginAndPasswordInput();
+            userData = new UserData(loginAndPassword[0], loginAndPassword[1]);
+            serverDeliver.writeData(userData);
+            result = (String) serverDeliver.readData();
+            System.out.println(result);
+        }
+    }
+
+    public void writeUserData(Serializable data) {
+        userData.setData(data);
+        serverDeliver.writeData(userData);
+    }
+
+    public void createNewAccount() {
+        String[] loginAndPassword = loginAndPasswordInput();
+        serverDeliver.writeData(new UserData(loginAndPassword[0], loginAndPassword[1], false));
+        System.out.println(serverDeliver.readData());
+    }
+
+    private String[] loginAndPasswordInput() {
+        String login = "";
+        String password = "";
+        char[] pass;
+        do {
+            login = safeRead("Введите логин: ");
+        } while (login.equals(""));
+        do {
+            System.out.println("Введите пароль: (не допускаются пробельные символы)");
+            pass = console.readPassword();
+        } while (pass.equals("") || pass.equals(" "));
+        for(char c : pass){
+            password += password + c;
+        }
+        String[] result = new String[2];
+        result[0] = login;
+        result[1] = password;
+        return result;
+    }
+
+
+
+    public void understanding() {
         String command = "";
         while (!command.equals("exit")) {
             command = safeRead("Введите команду: (help - узнать список команд, exit - выход из программы (без сохранения))");
@@ -92,8 +104,8 @@ public class ClientPart {
         }
     }
 
-    private void understand(String command) throws ConnectionException, IOException{
-            String s = "";
+    private void understand(String command) throws ConnectionException{
+        String s = "";
         try {
             if (!command.equals("exit")) {
                 Command inputCommand = cd.decode(command.trim());
@@ -117,9 +129,10 @@ public class ClientPart {
                         e.getMessage();
                     }
                 } else if (inputCommand.getClass() == AddCommand.class || inputCommand.getClass() == RemoveLowerCommand.class
-                || inputCommand.getClass() == RemoveGreaterCommand.class) {
+                        || inputCommand.getClass() == RemoveGreaterCommand.class) {
                     AddFlat addFlatCommand = new AddFlat();
                     ((CommandWithFlatWithoutArgument) inputCommand).setFlat(addFlatCommand.addFlat(in));
+                    ((CommandWithFlatWithoutArgument) inputCommand).getFlat().setId(-1);
                 }else if(inputCommand.getClass() == UpdateCommand.class){
                     AddFlat addFlatCommand = new AddFlat();
                     ((UpdateCommand) inputCommand).setFlat(addFlatCommand.addFlat(in));
@@ -128,14 +141,7 @@ public class ClientPart {
                     ((RemoveAllByHouseCommand) inputCommand).setHouse(addFlatCommand.addHouse(in));
                 }
                 if(inputCommand.getClass() != ExecuteScriptCommand.class){
-//                    byte[] bytes = serverDeliver.serialize(inputCommand);
-//                    Integer integer = bytes.length;
-//                    String integerToString = integer.toString();
-//                    serverDeliver.writeData(integerToString);
-//                    System.out.println(integer);
-//                    Integer integer1 = Integer.parseInt((String) serverDeliver.readData());
-//                    System.out.println(integer1);
-                    serverDeliver.writeData(inputCommand);
+                    writeUserData(inputCommand);
                     s = ((String) serverDeliver.readData());
                 }
                 String output = null;
@@ -146,11 +152,11 @@ public class ClientPart {
             }
         } catch (NumberFormatException e) {System.out.println("Аргумент имеет неправльный тип (id - int)");}
         catch(NullPointerException | IllegalArgumentException e){
-                if (command.equals("exit")) { System.exit(0); }
-                System.out.println("Такой команды не существует.");
+            if (command.equals("exit")) { System.exit(0); }
+            System.out.println("Такой команды не существует.");
         }
         catch(IllegalCountOfArgumentsException e){
-                System.out.println(e.getMessage());
+            System.out.println(e.getMessage());
         }
     }
 }

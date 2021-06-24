@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component LANGUAGE_LEVEL="JDK_1_8" inherit-compiler-output="true" inheritJdk="true">
+	<output-test url="file://$MODULE_DIR$/../out/test/Server"/>
+	<exclude-output/>
+	<contentEntry url="file://$MODULE_DIR$"/>
+	<lib name="slf4j-api-1.1.0.jar" scope="COMPILE">
+		<relative-module-cls project-related="jar://$PROJECT_DIR$/slf4j-api-1.1.0.jar!/"/>
+	</lib>
+	<lib name="logback-core-1.1.10.jar" scope="COMPILE">
+		<relative-module-cls project-related="jar://$PROJECT_DIR$/logback-core-1.1.10.jar!/"/>
+	</lib>
+	<lib name="logback-classic-1.1.10.jar" scope="COMPILE">
+		<relative-module-cls project-related="jar://$PROJECT_DIR$/logback-classic-1.1.10.jar!/"/>
+	</lib>
+	<lib name="logback-classic-1.0.0.jar" scope="COMPILE">
+		<relative-module-cls project-related="jar://$PROJECT_DIR$/logback-classic-1.0.0.jar!/"/>
+	</lib>
+	<lib name="logback-core-1.0.0.jar" scope="COMPILE">
+		<relative-module-cls project-related="jar://$PROJECT_DIR$/logback-core-1.0.0.jar!/"/>
+	</lib>
+</component>
